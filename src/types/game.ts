@@ -69,6 +69,7 @@ export interface GameState {
   suspicionLevels: Record<string, number>;
   gamePhase: 'intro' | 'investigation' | 'accusation' | 'ending';
   ending?: 'correct' | 'incorrect' | 'incomplete' | 'partial';
+  startTime?: number; // Timestamp when the game started
 }
 
 export interface Investigation {
@@ -85,3 +86,28 @@ export interface Investigation {
 }
 
 export type GameTone = 'noir' | 'light' | 'dark';
+
+// Novos tipos para o perfil do detetive
+export interface DetectiveProfile {
+  id: string;
+  name: string;
+  level: number;
+  experience: number;
+  money: number;
+  casesSolved: number;
+  casesFailed: number;
+  totalEarnings: number;
+  createdAt: number;
+}
+
+export interface CompletedCase {
+  id: string;
+  crimeTitle: string;
+  crimeType: string;
+  dateCompleted: number;
+  timeTaken: number; // em segundos
+  moneyEarned: number;
+  wasSuccessful: boolean;
+  cluesFound: number;
+  totalClues: number;
+}

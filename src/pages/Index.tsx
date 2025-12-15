@@ -1,17 +1,35 @@
 "use client";
+
 import { useState, useEffect } from 'react';
 import { StartScreen } from '@/components/StartScreen';
 import { GameScreen } from '@/components/GameScreen';
 import { LoadingScreen } from '@/components/game/LoadingScreen';
+import { DetectiveProfile } from '@/components/DetectiveProfile';
 import { useAIGeneration } from '@/hooks/useAIGeneration';
+import { useDetectiveProfile } from '@/hooks/useDetectiveProfile';
 import { NarrativeTone } from '@/services/aiGeneration';
 import { toast } from 'sonner';
 
-type GameView = 'start' | 'loading' | 'game';
+type GameView = 'start' | 'loading' | 'game' | 'profile';
 
 const Index = () => {
   const [currentView, setCurrentView] = useState<GameView>('start');
-  const { investigation, progress, characterImages, generateNewCase, reset, isLoading, hasError } = useAIGeneration();
+  const { 
+    investigation, 
+    progress, 
+    characterImages, 
+    generateNewCase, 
+    reset, 
+    isLoading, 
+    hasError 
+  } = useAIGeneration();
+  
+  const { 
+    profile, 
+    completedCases, 
+    updateProfile, 
+    resetProfile 
+  } = useDetectiveProfile();
 
   useEffect(() => {
     console.log('Index: useEffect hasError triggered', { hasError, progress });
@@ -61,6 +79,21 @@ const Index = () => {
     setCurrentView('start');
   };
 
+  const handleProfile = () => {
+    setCurrentView('profile');
+  };
+
+  const handleBackToMenu = () => {
+    setCurrentView('start');
+  };
+
+  const handleResetProfile = () => {
+    resetProfile();
+    toast.success("Perfil Resetado", {
+      description: "Seu perfil foi resetado com sucesso."
+    });
+  };
+
   console.log('Index: Rendering', { currentView, isLoading, investigation });
 
   if (currentView === 'loading' || isLoading) {
@@ -71,31 +104,48 @@ const Index = () => {
   return (
     <>
       {currentView === 'start' && (
-        <StartScreen onStartGame={handleStartGame} />
+        <StartScreen 
+          onStartGame={handleStartGame} 
+          onProfile={handleProfile}
+          profile={profile}
+        />
       )}
+      
       {currentView === 'game' && investigation && (
         <div key="game-screen">
           <GameScreen 
             investigation={investigation} 
-            characterImages={characterImages}
+            characterImages={characterImages} 
             onMainMenu={handleMainMenu} 
-            onRestartGame={handleRestartGame} 
+            onRestartGame={handleRestartGame}
+            onProfile={handleProfile}
           />
         </div>
       )}
+      
       {currentView === 'game' && !investigation && (
         <div className="min-h-screen bg-red-500 flex items-center justify-center">
           <div className="text-white text-center p-8">
             <h1 className="text-2xl font-bold mb-4">Erro: Investigação não encontrada</h1>
             <p className="mb-4">Houve um problema ao carregar o caso. Retornando ao menu principal.</p>
             <button 
-              onClick={handleMainMenu}
+              onClick={handleMainMenu} 
               className="px-4 py-2 bg-white text-red-500 rounded font-bold"
             >
               Voltar ao Menu
             </button>
           </div>
         </div>
+      )}
+      
+      {currentView === 'profile' && profile && (
+        <DetectiveProfile
+          profile={profile}
+          completedCases={completedCases}
+          onUpdateProfile={updateProfile}
+          onResetProfile={handleResetProfile}
+          onBack={handleBackToMenu}
+        />
       )}
     </>
   );

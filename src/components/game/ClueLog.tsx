@@ -67,7 +67,7 @@ function ClueDetailModal({ clue, isOpen, onClose, clueImages, setClueImages, loa
     if (clue && isOpen && !imageUrl && !isLoading) {
       loadImage();
     }
-  }, [clue, isOpen]);
+  }, [clue, isOpen, imageUrl, isLoading]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>

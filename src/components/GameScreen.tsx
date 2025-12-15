@@ -9,21 +9,24 @@ import { ClueLog, ClueToggleButton } from './game/ClueLog';
 import { CharacterPortrait } from './game/CharacterPortrait';
 import { GameHeader } from './game/GameHeader';
 import { EndingScreen } from './game/EndingScreen';
-import { Investigation } from '@/types/game';
+import { Investigation, GameState } from '@/types/game';
 import { generateSFX } from '@/services/aiGeneration';
+import { useDetectiveProfile } from '@/hooks/useDetectiveProfile';
 
 interface GameScreenProps {
   investigation: Investigation;
   characterImages: Map<string, string>;
   onMainMenu: () => void;
   onRestartGame: () => void;
+  onProfile: () => void;
 }
 
-export function GameScreen({ investigation, characterImages, onMainMenu, onRestartGame }: GameScreenProps) {
+export function GameScreen({ investigation, characterImages, onMainMenu, onRestartGame, onProfile }: GameScreenProps) {
   console.log('GameScreen: Rendering with investigation', investigation);
   
   const [isClueLogOpen, setIsClueLogOpen] = useState(false);
   const [ambientAudio, setAmbientAudio] = useState<HTMLAudioElement | null>(null);
+  const [gameStartTime] = useState<number>(Date.now());
   
   const { 
     gameState, 
@@ -38,6 +41,8 @@ export function GameScreen({ investigation, characterImages, onMainMenu, onResta
   const currentScene = getCurrentScene();
   const discoveredClues = getDiscoveredClues();
   const progress = getProgress();
+  
+  const { profile, updateProfile, addCompletedCase, calculateEarnings } = useDetectiveProfile();
   
   console.log('GameScreen: Current scene', currentScene);
   console.log('GameScreen: Game state', gameState);
@@ -76,6 +81,55 @@ export function GameScreen({ investigation, characterImages, onMainMenu, onResta
       ambientAudio.play().catch(e => console.error("Error playing audio:", e));
     }
   }, [ambientAudio]);
+
+  // Salvar estatísticas quando o jogo terminar
+  useEffect(() => {
+    if (gameState.gamePhase === 'ending' && profile) {
+      const timeTaken = Math.floor((Date.now() - gameStartTime) / 1000); // segundos
+      const isSuccessful = gameState.ending === 'correct';
+      const realClues = investigation.clues.filter(c => c.isReal !== false).length;
+      
+      const moneyEarned = calculateEarnings(
+        timeTaken, 
+        isSuccessful, 
+        realClues, 
+        discoveredClues.length
+      );
+      
+      // Registrar caso completo
+      addCompletedCase({
+        crimeTitle: investigation.crime.title,
+        crimeType: investigation.crime.type,
+        dateCompleted: Date.now(),
+        timeTaken,
+        moneyEarned,
+        wasSuccessful: isSuccessful,
+        cluesFound: discoveredClues.length,
+        totalClues: realClues
+      });
+      
+      // Atualizar perfil
+      const updates: any = {
+        money: profile.money + (isSuccessful ? moneyEarned : 0),
+        totalEarnings: profile.totalEarnings + (isSuccessful ? moneyEarned : 0)
+      };
+      
+      if (isSuccessful) {
+        updates.casesSolved = profile.casesSolved + 1;
+        updates.experience = profile.experience + 100;
+        
+        // Level up logic (simplified)
+        const newLevel = Math.floor(updates.experience / 1000) + 1;
+        if (newLevel > profile.level) {
+          updates.level = newLevel;
+        }
+      } else {
+        updates.casesFailed = profile.casesFailed + 1;
+      }
+      
+      updateProfile(updates);
+    }
+  }, [gameState.gamePhase, gameState.ending, profile, investigation, discoveredClues.length, gameStartTime]);
 
   if (!investigation) {
     console.error('GameScreen: No investigation provided');
@@ -129,6 +183,7 @@ export function GameScreen({ investigation, characterImages, onMainMenu, onResta
         gameState={gameState} 
         onRestart={handleRestart} 
         onMainMenu={onMainMenu} 
+        onProfile={onProfile}
       />
     );
   }
