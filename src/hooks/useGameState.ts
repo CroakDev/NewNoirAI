@@ -1,8 +1,8 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { GameState, Scene, Choice, Investigation } from '@/types/game';
 
 const initialGameState: GameState = {
-  currentScene: 'scene-intro',
+  currentScene: '',
   discoveredClues: [],
   interrogatedCharacters: [],
   choicesMade: [],
@@ -13,7 +13,16 @@ const initialGameState: GameState = {
 export function useGameState(investigation: Investigation) {
   console.log('useGameState: Initializing with investigation', investigation);
   
-  const [gameState, setGameState] = useState<GameState>(initialGameState);
+  // Usar useMemo para garantir que o estado inicial seja definido apenas uma vez
+  const initialSceneId = useMemo(() => {
+    return investigation.startingSceneId || (investigation.scenes?.[0]?.id || 'scene-intro');
+  }, [investigation]);
+  
+  const [gameState, setGameState] = useState<GameState>(() => ({
+    ...initialGameState,
+    currentScene: initialSceneId
+  }));
+  
   const [narrativeHistory, setNarrativeHistory] = useState<string[]>([]);
   
   const getCurrentScene = useCallback((): Scene | undefined => {
@@ -37,22 +46,26 @@ export function useGameState(investigation: Investigation) {
       newState.choicesMade = [...prev.choicesMade, choice.id];
       
       // Reveal clue if choice has one
-      if (choice.revealsClue && !prev.discoveredClues.includes(choice.revealsClue)) {
-        newState.discoveredClues = [...prev.discoveredClues, choice.revealsClue];
+      if (choice.revealsClueId && !prev.discoveredClues.includes(choice.revealsClueId)) {
+        newState.discoveredClues = [...prev.discoveredClues, choice.revealsClueId];
+        console.log('useGameState: Revealing clue', choice.revealsClueId);
       }
       
-      // Update scene
-      newState.currentScene = choice.leadsTo || prev.currentScene;
+      // Update scene - corrigido para usar nextSceneId
+      if (choice.nextSceneId) {
+        newState.currentScene = choice.nextSceneId;
+        console.log('useGameState: Changing scene to', choice.nextSceneId);
+      }
       
       // Update game phase based on scene
-      if (choice.leadsTo?.includes('ending')) {
+      if (choice.nextSceneId?.includes('ending')) {
         newState.gamePhase = 'ending';
-        if (choice.leadsTo.includes('correct')) {
+        if (choice.nextSceneId.includes('correct')) {
           newState.ending = 'correct';
         } else {
           newState.ending = 'incorrect';
         }
-      } else if (choice.leadsTo?.includes('interrogation')) {
+      } else if (choice.nextSceneId?.includes('interrogation')) {
         newState.gamePhase = 'accusation';
       } else if (prev.gamePhase === 'intro') {
         newState.gamePhase = 'investigation';
@@ -63,8 +76,8 @@ export function useGameState(investigation: Investigation) {
     });
     
     // Add to narrative history
-    if (choice.leadsTo && investigation.scenes) {
-      const scene = investigation.scenes.find(s => s.id === choice.leadsTo);
+    if (choice.nextSceneId && investigation.scenes) {
+      const scene = investigation.scenes.find(s => s.id === choice.nextSceneId);
       if (scene) {
         setNarrativeHistory(prev => [...prev, scene.narrative]);
       }
@@ -72,8 +85,8 @@ export function useGameState(investigation: Investigation) {
   }, [investigation.scenes]);
   
   const canMakeChoice = useCallback((choice: Choice): boolean => {
-    if (!choice.requiresClue) return true;
-    return gameState.discoveredClues.includes(choice.requiresClue);
+    if (!choice.requiresClueId) return true;
+    return gameState.discoveredClues.includes(choice.requiresClueId);
   }, [gameState.discoveredClues]);
   
   const getDiscoveredClues = useCallback(() => {
@@ -89,9 +102,12 @@ export function useGameState(investigation: Investigation) {
   
   const resetGame = useCallback(() => {
     console.log('useGameState: Resetting game');
-    setGameState(initialGameState);
+    setGameState({
+      ...initialGameState,
+      currentScene: initialSceneId
+    });
     setNarrativeHistory([]);
-  }, []);
+  }, [initialSceneId]);
   
   const getProgress = useCallback(() => {
     if (!investigation.clues) {
@@ -107,14 +123,7 @@ export function useGameState(investigation: Investigation) {
     return Math.round((foundClues / totalClues) * 100);
   }, [investigation.clues, gameState.discoveredClues]);
   
-  // Set initial scene if it's the intro
-  if (gameState.currentScene === 'scene-intro' && investigation.startingSceneId) {
-    console.log('useGameState: Setting initial scene to', investigation.startingSceneId);
-    setGameState(prev => ({
-      ...prev,
-      currentScene: investigation.startingSceneId || 'scene-intro'
-    }));
-  }
+  console.log('useGameState: Returning state', { gameState, narrativeHistory });
   
   return { 
     gameState, 
