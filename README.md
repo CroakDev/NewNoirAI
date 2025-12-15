@@ -59,6 +59,18 @@ This project is built with:
 - React
 - shadcn-ui
 - Tailwind CSS
+- Supabase (Backend + Edge Functions)
+- Groq API (AI Generation - Free)
+- Pollinations.ai (Image Generation - Free)
+
+## AI Configuration
+
+This game uses AI to generate unique detective cases and images. The project now uses FREE APIs:
+
+- **Groq API** for case generation (fast, free, unlimited)
+- **Pollinations.ai** for image generation (free, no API key needed)
+
+See [GROQ_SETUP.md](./GROQ_SETUP.md) for complete setup instructions.
 
 ## How can I deploy this project?
 
