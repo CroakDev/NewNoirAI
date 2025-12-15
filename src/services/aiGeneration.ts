@@ -28,7 +28,7 @@ export async function generateCase(tone: NarrativeTone = 'noir'): Promise<Invest
       },
       body: JSON.stringify({ tone }),
     });
-
+    
     console.log('aiGeneration: Response received', response.status);
     
     if (!response.ok) {
@@ -36,10 +36,10 @@ export async function generateCase(tone: NarrativeTone = 'noir'): Promise<Invest
       console.error('aiGeneration: Response not OK', response.status, error);
       throw new Error(error.error || 'Failed to generate case');
     }
-
+    
     const data = await response.json();
     console.log('aiGeneration: Data received', data);
-
+    
     // Transform to Investigation format
     const investigation: Investigation = {
       crime: data.crime,
@@ -53,7 +53,7 @@ export async function generateCase(tone: NarrativeTone = 'noir'): Promise<Invest
       culpritId: data.culpritId,
       motiveExplanation: data.motiveExplanation,
     };
-
+    
     console.log('aiGeneration: Investigation transformed', investigation);
     return investigation;
   } catch (error) {
@@ -67,7 +67,7 @@ export async function generateCharacterImage(characterId: string, imagePrompt: s
   if (imageCache.has(characterId)) {
     return imageCache.get(characterId)!;
   }
-
+  
   console.log('aiGeneration: Generating image for character:', characterId);
   
   try {
@@ -83,12 +83,12 @@ export async function generateCharacterImage(characterId: string, imagePrompt: s
         type: 'character'
       }),
     });
-
+    
     if (!response.ok) {
       console.error('aiGeneration: Image generation failed', response.status);
       return null;
     }
-
+    
     const data = await response.json();
     if (data.imageUrl) {
       imageCache.set(characterId, data.imageUrl);
@@ -108,7 +108,7 @@ export async function generateClueImage(clueId: string, description: string): Pr
   if (imageCache.has(cacheKey)) {
     return imageCache.get(cacheKey)!;
   }
-
+  
   console.log('aiGeneration: Generating image for clue:', clueId);
   
   try {
@@ -124,12 +124,12 @@ export async function generateClueImage(clueId: string, description: string): Pr
         type: 'clue'
       }),
     });
-
+    
     if (!response.ok) {
       console.error('aiGeneration: Clue image generation failed', response.status);
       return null;
     }
-
+    
     const data = await response.json();
     if (data.imageUrl) {
       imageCache.set(cacheKey, data.imageUrl);
@@ -138,45 +138,6 @@ export async function generateClueImage(clueId: string, description: string): Pr
     return null;
   } catch (error) {
     console.error('aiGeneration: Error generating clue image:', error);
-    return null;
-  }
-}
-
-export async function generateSceneImage(sceneId: string, location: string): Promise<string | null> {
-  const cacheKey = `scene-${sceneId}`;
-  
-  if (imageCache.has(cacheKey)) {
-    return imageCache.get(cacheKey)!;
-  }
-
-  console.log('aiGeneration: Generating scene image:', location);
-  
-  try {
-    const response = await fetch(`${SUPABASE_URL}/functions/v1/generate-image`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': SUPABASE_KEY,
-        'Authorization': `Bearer ${SUPABASE_KEY}`,
-      },
-      body: JSON.stringify({ 
-        prompt: `Noir detective scene at ${location}, dark atmosphere, rain, neon lights`,
-        type: 'scene'
-      }),
-    });
-
-    if (!response.ok) {
-      return null;
-    }
-
-    const data = await response.json();
-    if (data.imageUrl) {
-      imageCache.set(cacheKey, data.imageUrl);
-      return data.imageUrl;
-    }
-    return null;
-  } catch (error) {
-    console.error('aiGeneration: Error generating scene image:', error);
     return null;
   }
 }
@@ -194,11 +155,11 @@ export async function generateSFX(type: 'ambient' | 'rain' | 'footsteps' | 'door
       },
       body: JSON.stringify({ type }),
     });
-
+    
     if (!response.ok) {
       return null;
     }
-
+    
     const data = await response.json();
     return data.audioUrl || null;
   } catch (error) {
