@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Clue } from '@/types/game';
-import { Search, MapPin, AlertCircle, CheckCircle, Eye } from 'lucide-react';
+import { Search, MapPin, AlertCircle, CheckCircle, Eye, Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { generateClueImage } from '@/services/aiGeneration';
+import { useToast } from '@/hooks/use-toast';
 
 interface ClueLogProps {
   clues: Clue[];
@@ -18,30 +19,55 @@ interface ClueDetailModalProps {
   onClose: () => void;
   clueImages: Map<string, string>;
   setClueImages: React.Dispatch<React.SetStateAction<Map<string, string>>>;
+  loadingImages: Set<string>;
+  setLoadingImages: React.Dispatch<React.SetStateAction<Set<string>>>;
 }
 
-function ClueDetailModal({ clue, isOpen, onClose, clueImages, setClueImages }: ClueDetailModalProps) {
-  const [isLoadingImage, setIsLoadingImage] = useState(false);
+function ClueDetailModal({ clue, isOpen, onClose, clueImages, setClueImages, loadingImages, setLoadingImages }: ClueDetailModalProps) {
+  const { toast } = useToast();
   
   if (!clue) return null;
 
   const loadImage = async () => {
-    if (clueImages.has(clue.id)) return;
+    if (clueImages.has(clue.id) || loadingImages.has(clue.id)) return;
     
-    setIsLoadingImage(true);
+    setLoadingImages(prev => new Set(prev).add(clue.id));
     try {
       const imageUrl = await generateClueImage(clue.id, clue.description);
       if (imageUrl) {
         setClueImages(prev => new Map(prev).set(clue.id, imageUrl));
+      } else {
+        toast({
+          title: "Erro ao gerar imagem",
+          description: "Não foi possível gerar a imagem da pista. Tente novamente.",
+          variant: "destructive"
+        });
       }
     } catch (error) {
       console.error('Error loading clue image:', error);
+      toast({
+        title: "Erro ao gerar imagem",
+        description: "Ocorreu um erro ao gerar a imagem da pista.",
+        variant: "destructive"
+      });
     } finally {
-      setIsLoadingImage(false);
+      setLoadingImages(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(clue.id);
+        return newSet;
+      });
     }
   };
 
   const imageUrl = clueImages.get(clue.id);
+  const isLoading = loadingImages.has(clue.id);
+
+  // Carregar imagem automaticamente quando o modal abre
+  useEffect(() => {
+    if (clue && isOpen && !imageUrl && !isLoading) {
+      loadImage();
+    }
+  }, [clue, isOpen]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -66,20 +92,23 @@ function ClueDetailModal({ clue, isOpen, onClose, clueImages, setClueImages }: C
                   alt={clue.name} 
                   className="w-full h-48 object-cover"
                 />
+              ) : isLoading ? (
+                <div className="w-full h-48 bg-muted flex flex-col items-center justify-center">
+                  <Loader2 className="w-8 h-8 animate-spin text-noir-amber mb-2" />
+                  <p className="font-body text-sm text-muted-foreground">
+                    Equipe forense analisando evidência...
+                  </p>
+                </div>
               ) : (
                 <div className="w-full h-48 bg-muted flex items-center justify-center">
-                  {isLoadingImage ? (
-                    <div className="animate-pulse">Carregando imagem...</div>
-                  ) : (
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={loadImage}
-                      disabled={isLoadingImage}
-                    >
-                      {isLoadingImage ? 'Gerando...' : 'Gerar Imagem'}
-                    </Button>
-                  )}
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={loadImage}
+                    disabled={isLoading}
+                  >
+                    {isLoading ? 'Gerando...' : 'Gerar Imagem'}
+                  </Button>
                 </div>
               )}
             </CardContent>
@@ -121,6 +150,8 @@ function ClueDetailModal({ clue, isOpen, onClose, clueImages, setClueImages }: C
 export function ClueLog({ clues, isOpen, onToggle }: ClueLogProps) {
   const [selectedClue, setSelectedClue] = useState<Clue | null>(null);
   const [clueImages, setClueImages] = useState<Map<string, string>>(new Map());
+  const [loadingImages, setLoadingImages] = useState<Set<string>>(new Set());
+  const { toast } = useToast();
   
   const handleClueClick = (clue: Clue) => {
     setSelectedClue(clue);
@@ -202,6 +233,8 @@ export function ClueLog({ clues, isOpen, onToggle }: ClueLogProps) {
         onClose={closeDetailModal}
         clueImages={clueImages}
         setClueImages={setClueImages}
+        loadingImages={loadingImages}
+        setLoadingImages={setLoadingImages}
       />
     </>
   );

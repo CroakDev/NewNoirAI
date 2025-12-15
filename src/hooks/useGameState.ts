@@ -1,5 +1,6 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { GameState, Scene, Choice, Investigation, Clue } from '@/types/game';
+import { toast } from 'sonner';
 
 const initialGameState: GameState = {
   currentScene: '',
@@ -24,6 +25,26 @@ export function useGameState(investigation: Investigation) {
   }));
 
   const [narrativeHistory, setNarrativeHistory] = useState<string[]>([]);
+
+  // Efeito para mostrar notificações de novas pistas
+  useEffect(() => {
+    if (gameState.discoveredClues.length > 0) {
+      const lastClueId = gameState.discoveredClues[gameState.discoveredClues.length - 1];
+      
+      // Verificar se a pista já existia antes (para evitar notificações duplicadas)
+      const prevClueCount = gameState.discoveredClues.length - 1;
+      if (prevClueCount >= 0) {
+        // Esta é uma nova pista
+        const clue = investigation.clues?.find(c => c.id === lastClueId);
+        if (clue) {
+          toast.success(`Nova pista encontrada!`, {
+            description: clue.name,
+            duration: 3000
+          });
+        }
+      }
+    }
+  }, [gameState.discoveredClues, investigation.clues]);
 
   const getCurrentScene = useCallback((): Scene | undefined => {
     if (!investigation.scenes) {
