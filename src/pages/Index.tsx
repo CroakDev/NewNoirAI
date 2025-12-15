@@ -74,12 +74,14 @@ const Index = () => {
         <StartScreen onStartGame={handleStartGame} />
       )}
       {currentView === 'game' && investigation && (
-        <GameScreen 
-          investigation={investigation} 
-          characterImages={characterImages}
-          onMainMenu={handleMainMenu} 
-          onRestartGame={handleRestartGame} 
-        />
+        <div key="game-screen">
+          <GameScreen 
+            investigation={investigation} 
+            characterImages={characterImages}
+            onMainMenu={handleMainMenu} 
+            onRestartGame={handleRestartGame} 
+          />
+        </div>
       )}
       {currentView === 'game' && !investigation && (
         <div className="min-h-screen bg-red-500 flex items-center justify-center">
