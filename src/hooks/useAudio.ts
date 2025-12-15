@@ -23,7 +23,7 @@ export function useAudio() {
     backgroundAudioRef.current.volume = isMuted ? 0 : 0.3;
     
     // Carregar efeito sonoro de digitação
-    typingAudioRef.current = new Audio('@/assets/trilhasonora.mp3');
+    typingAudioRef.current = new Audio('@/assets/digitando.mp3');
     typingAudioRef.current.loop = true;
     typingAudioRef.current.volume = isMuted ? 0 : 0.2;
     
