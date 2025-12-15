@@ -12,6 +12,8 @@ import { EndingScreen } from './game/EndingScreen';
 import { Investigation, GameState } from '@/types/game';
 import { generateSFX } from '@/services/aiGeneration';
 import { useDetectiveProfile } from '@/hooks/useDetectiveProfile';
+import { useAudio } from '@/hooks/useAudio';
+import { Volume2, VolumeX } from 'lucide-react';
 
 interface GameScreenProps {
   investigation: Investigation;
@@ -43,6 +45,7 @@ export function GameScreen({ investigation, characterImages, onMainMenu, onResta
   const progress = getProgress();
   
   const { profile, updateProfile, addCompletedCase, calculateEarnings } = useDetectiveProfile();
+  const { isMuted, toggleMute } = useAudio();
   
   console.log('GameScreen: Current scene', currentScene);
   console.log('GameScreen: Game state', gameState);
@@ -56,7 +59,7 @@ export function GameScreen({ investigation, characterImages, onMainMenu, onResta
         console.log('GameScreen: Ambient SFX loaded');
         const audio = new Audio(audioUrl);
         audio.loop = true;
-        audio.volume = 0.3; // Adjust volume as needed
+        audio.volume = isMuted ? 0 : 0.3; // Adjust volume as needed
         setAmbientAudio(audio);
       } else {
         console.log('GameScreen: No ambient SFX available');
@@ -78,9 +81,12 @@ export function GameScreen({ investigation, characterImages, onMainMenu, onResta
     // Play ambient audio when component mounts and pause when unmount
     if (ambientAudio) {
       console.log('GameScreen: Playing ambient audio');
-      ambientAudio.play().catch(e => console.error("Error playing audio:", e));
+      ambientAudio.volume = isMuted ? 0 : 0.3;
+      if (!isMuted) {
+        ambientAudio.play().catch(e => console.error("Error playing audio:", e));
+      }
     }
-  }, [ambientAudio]);
+  }, [ambientAudio, isMuted]);
 
   // Salvar estatísticas quando o jogo terminar
   useEffect(() => {
@@ -195,6 +201,20 @@ export function GameScreen({ investigation, characterImages, onMainMenu, onResta
       {/* Vignette */}
       <div className="fixed inset-0 bg-gradient-vignette pointer-events-none z-10" />
       <div className="film-grain fixed inset-0 pointer-events-none z-10" />
+      
+      {/* Audio control */}
+      <div className="fixed top-4 right-4 z-40">
+        <button
+          onClick={toggleMute}
+          className="btn-noir p-3 rounded-full"
+        >
+          {isMuted ? (
+            <VolumeX className="w-5 h-5 text-noir-amber" />
+          ) : (
+            <Volume2 className="w-5 h-5 text-noir-amber" />
+          )}
+        </button>
+      </div>
       
       {/* Main content */}
       <div className="relative z-20 container mx-auto px-4 py-6 max-w-4xl">

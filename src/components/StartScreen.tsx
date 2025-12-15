@@ -1,21 +1,22 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Play, BookOpen, Settings, Sparkles, User } from 'lucide-react';
+import { Play, BookOpen, Settings, Sparkles, User, Volume2, VolumeX } from 'lucide-react';
 import { RainEffect } from './game/RainEffect';
 import { ToneSelector } from './game/ToneSelector';
 import { NarrativeTone } from '@/services/aiGeneration';
-import { DetectiveProfile } from './DetectiveProfile';
+import { useAudio } from '@/hooks/useAudio';
 
 interface StartScreenProps {
   onStartGame: (tone: NarrativeTone) => void;
   onProfile: () => void;
-  profile: DetectiveProfile | null;
+  profile: any;
 }
 
 export function StartScreen({ onStartGame, onProfile, profile }: StartScreenProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [selectedTone, setSelectedTone] = useState<NarrativeTone>('noir');
+  const { isMuted, toggleMute } = useAudio();
 
   useEffect(() => {
     setTimeout(() => setIsVisible(true), 100);
@@ -35,6 +36,20 @@ export function StartScreen({ onStartGame, onProfile, profile }: StartScreenProp
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 bg-noir-amber/10 rounded-full blur-3xl pointer-events-none" />
       
       <div className="relative z-30 flex flex-col items-center justify-center min-h-screen px-4">
+        {/* Audio control */}
+        <div className="absolute top-4 right-4 z-40">
+          <button
+            onClick={toggleMute}
+            className="btn-noir p-3 rounded-full"
+          >
+            {isMuted ? (
+              <VolumeX className="w-5 h-5 text-noir-amber" />
+            ) : (
+              <Volume2 className="w-5 h-5 text-noir-amber" />
+            )}
+          </button>
+        </div>
+        
         {/* Logo/Title */}
         <div className={`text-center transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
           <div className="mb-4">

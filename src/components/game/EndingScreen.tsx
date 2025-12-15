@@ -1,5 +1,6 @@
 import { GameState } from '@/types/game';
-import { Trophy, XCircle, RotateCcw, Home, User, Coins, Clock } from 'lucide-react';
+import { Trophy, XCircle, RotateCcw, Home, User, Coins, Clock, Volume2, VolumeX } from 'lucide-react';
+import { useAudio } from '@/hooks/useAudio';
 
 interface EndingScreenProps {
   gameState: GameState;
@@ -10,6 +11,7 @@ interface EndingScreenProps {
 
 export function EndingScreen({ gameState, onRestart, onMainMenu, onProfile }: EndingScreenProps) {
   const isCorrect = gameState.ending === 'correct';
+  const { isMuted, toggleMute } = useAudio();
   
   // Calcular tempo de jogo (se startTime estiver disponível)
   const timeTaken = gameState.startTime 
@@ -29,6 +31,20 @@ export function EndingScreen({ gameState, onRestart, onMainMenu, onProfile }: En
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-noir-deep/95 backdrop-blur-sm">
+      {/* Audio control */}
+      <div className="fixed top-4 right-4 z-50">
+        <button
+          onClick={toggleMute}
+          className="btn-noir p-3 rounded-full"
+        >
+          {isMuted ? (
+            <VolumeX className="w-5 h-5 text-noir-amber" />
+          ) : (
+            <Volume2 className="w-5 h-5 text-noir-amber" />
+          )}
+        </button>
+      </div>
+      
       <div className="max-w-lg mx-auto text-center p-8">
         <div className={`w-24 h-24 mx-auto mb-6 rounded-full flex items-center justify-center ${
           isCorrect 

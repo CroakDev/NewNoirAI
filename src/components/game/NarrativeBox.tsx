@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { Scene } from '@/types/game';
+import { useAudio } from '@/hooks/useAudio';
 
 interface NarrativeBoxProps {
   scene: Scene;
@@ -10,6 +11,7 @@ export function NarrativeBox({ scene }: NarrativeBoxProps) {
   const [isTyping, setIsTyping] = useState(true);
   const typingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const fullTextRef = useRef(scene.narrative);
+  const { startTypingSound, stopTypingSound } = useAudio();
 
   useEffect(() => {
     // Limpar intervalo anterior
@@ -21,6 +23,9 @@ export function NarrativeBox({ scene }: NarrativeBoxProps) {
     setDisplayedText('');
     setIsTyping(true);
     fullTextRef.current = scene.narrative;
+    
+    // Iniciar som de digitação
+    startTypingSound();
 
     let index = 0;
     const text = scene.narrative;
@@ -31,6 +36,7 @@ export function NarrativeBox({ scene }: NarrativeBoxProps) {
         index++;
       } else {
         setIsTyping(false);
+        stopTypingSound();
         if (typingIntervalRef.current) {
           clearInterval(typingIntervalRef.current);
         }
@@ -41,6 +47,7 @@ export function NarrativeBox({ scene }: NarrativeBoxProps) {
       if (typingIntervalRef.current) {
         clearInterval(typingIntervalRef.current);
       }
+      stopTypingSound();
     };
   }, [scene.narrative]);
 
@@ -50,6 +57,9 @@ export function NarrativeBox({ scene }: NarrativeBoxProps) {
       if (typingIntervalRef.current) {
         clearInterval(typingIntervalRef.current);
       }
+      
+      // Parar som de digitação
+      stopTypingSound();
       
       // Mostrar texto completo imediatamente
       setDisplayedText(fullTextRef.current);
