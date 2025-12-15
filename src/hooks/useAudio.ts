@@ -18,7 +18,7 @@ export function useAudio() {
     audioContextRef.current = new AudioContext();
     
     // Carregar trilha sonora de fundo
-    backgroundAudioRef.current = new Audio('/trilhasonora.mp3');
+    backgroundAudioRef.current = new Audio('@/assets/');
     backgroundAudioRef.current.loop = true;
     backgroundAudioRef.current.volume = isMuted ? 0 : 0.3;
     
