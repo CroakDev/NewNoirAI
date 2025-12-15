@@ -1,13 +1,18 @@
+"use client";
+
 import { useState, useEffect } from 'react';
 import { Play, BookOpen, Settings, Sparkles } from 'lucide-react';
 import { RainEffect } from './game/RainEffect';
+import { ToneSelector } from './game/ToneSelector';
+import { NarrativeTone } from '@/services/aiGeneration';
 
 interface StartScreenProps {
-  onStartGame: () => void;
+  onStartGame: (tone: NarrativeTone) => void;
 }
 
 export function StartScreen({ onStartGame }: StartScreenProps) {
   const [isVisible, setIsVisible] = useState(false);
+  const [selectedTone, setSelectedTone] = useState<NarrativeTone>('noir');
 
   useEffect(() => {
     setTimeout(() => setIsVisible(true), 100);
@@ -57,6 +62,15 @@ export function StartScreen({ onStartGame }: StartScreenProps) {
         `}>
           Resolva crimes. Encontre pistas. Desvende a verdade.
         </p>
+
+        {/* Tone Selector */}
+        <div className={`
+          mb-8
+          transition-all duration-1000 delay-400
+          ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}
+        `}>
+          <ToneSelector selectedTone={selectedTone} onSelect={setSelectedTone} />
+        </div>
         
         {/* Buttons */}
         <div className={`
@@ -65,7 +79,7 @@ export function StartScreen({ onStartGame }: StartScreenProps) {
           ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}
         `}>
           <button
-            onClick={onStartGame}
+            onClick={() => onStartGame(selectedTone)}
             className="btn-amber px-8 py-4 rounded-lg font-display text-lg tracking-wide flex items-center justify-center gap-3 shadow-glow"
           >
             <Play className="w-5 h-5" />

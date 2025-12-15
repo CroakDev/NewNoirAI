@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { sampleInvestigation } from '@/data/sampleInvestigation';
+"use client";
+
+import { useState, useEffect } from 'react';
 import { useGameState } from '@/hooks/useGameState';
 import { RainEffect } from './game/RainEffect';
 import { NarrativeBox } from './game/NarrativeBox';
@@ -8,13 +9,19 @@ import { ClueLog, ClueToggleButton } from './game/ClueLog';
 import { CharacterPortrait } from './game/CharacterPortrait';
 import { GameHeader } from './game/GameHeader';
 import { EndingScreen } from './game/EndingScreen';
+import { Investigation } from '@/types/game';
+import { generateSFX } from '@/services/aiGeneration';
 
 interface GameScreenProps {
+  investigation: Investigation;
+  characterImages: Map<string, string>;
   onMainMenu: () => void;
+  onRestartGame: () => void;
 }
 
-export function GameScreen({ onMainMenu }: GameScreenProps) {
+export function GameScreen({ investigation, characterImages, onMainMenu, onRestartGame }: GameScreenProps) {
   const [isClueLogOpen, setIsClueLogOpen] = useState(false);
+  const [ambientAudio, setAmbientAudio] = useState<HTMLAudioElement | null>(null);
   
   const {
     gameState,
@@ -24,21 +31,50 @@ export function GameScreen({ onMainMenu }: GameScreenProps) {
     getDiscoveredClues,
     resetGame,
     getProgress,
-  } = useGameState(sampleInvestigation);
+  } = useGameState(investigation);
 
   const currentScene = getCurrentScene();
   const discoveredClues = getDiscoveredClues();
   const progress = getProgress();
 
+  useEffect(() => {
+    // Load ambient SFX
+    const loadAmbientSFX = async () => {
+      const audioUrl = await generateSFX('ambient');
+      if (audioUrl) {
+        const audio = new Audio(audioUrl);
+        audio.loop = true;
+        audio.volume = 0.3; // Adjust volume as needed
+        setAmbientAudio(audio);
+      }
+    };
+    loadAmbientSFX();
+
+    return () => {
+      if (ambientAudio) {
+        ambientAudio.pause();
+        ambientAudio.currentTime = 0;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    // Play ambient audio when component mounts and pause when unmounts
+    if (ambientAudio) {
+      ambientAudio.play().catch(e => console.error("Error playing audio:", e));
+    }
+  }, [ambientAudio]);
+
   if (!currentScene) return null;
 
   // Get characters in current scene
-  const sceneCharacters = sampleInvestigation.characters.filter(
+  const sceneCharacters = investigation.characters.filter(
     char => currentScene.characters.includes(char.id)
   );
 
   const handleRestart = () => {
     resetGame();
+    onRestartGame();
   };
 
   if (gameState.gamePhase === 'ending') {
@@ -62,7 +98,7 @@ export function GameScreen({ onMainMenu }: GameScreenProps) {
       {/* Main content */}
       <div className="relative z-20 container mx-auto px-4 py-6 max-w-4xl">
         <GameHeader 
-          crime={sampleInvestigation.crime}
+          crime={investigation.crime}
           gameState={gameState}
           progress={progress}
         />
@@ -76,7 +112,7 @@ export function GameScreen({ onMainMenu }: GameScreenProps) {
                 className="fade-in"
                 style={{ animationDelay: `${index * 0.1}s` }}
               >
-                <CharacterPortrait character={char} size="md" />
+                <CharacterPortrait character={char} characterImages={characterImages} size="md" />
               </div>
             ))}
           </div>
