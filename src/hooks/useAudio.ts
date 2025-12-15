@@ -22,16 +22,16 @@ export function useAudio() {
     // Carregar trilha sonora de fundo
     backgroundAudioRef.current = new Audio(`/src/assets/trilhasonora${currentTrack}.mp3`);
     backgroundAudioRef.current.loop = true;
-    backgroundAudioRef.current.volume = isMuted ? 0 : 0.3;
+    backgroundAudioRef.current.volume = isMuted ? 0 : 0.1; // Volume mais baixo
     
     // Carregar efeito sonoro de digitação
     typingAudioRef.current = new Audio('/src/assets/digitando.mp3');
     typingAudioRef.current.loop = true;
-    typingAudioRef.current.volume = isMuted ? 0 : 0.2;
+    typingAudioRef.current.volume = isMuted ? 0 : 0.1; // Volume mais baixo
     
     // Carregar efeito sonoro de notificação
     notifyAudioRef.current = new Audio('/src/assets/notify.mp3');
-    notifyAudioRef.current.volume = isMuted ? 0 : 0.5;
+    notifyAudioRef.current.volume = isMuted ? 0 : 0.3; // Volume mais baixo
     
     // Iniciar trilha sonora
     const playBackgroundAudio = async () => {
@@ -61,15 +61,15 @@ export function useAudio() {
     localStorage.setItem('noir-detective-muted', JSON.stringify(isMuted));
     
     if (backgroundAudioRef.current) {
-      backgroundAudioRef.current.volume = isMuted ? 0 : 0.3;
+      backgroundAudioRef.current.volume = isMuted ? 0 : (isTyping ? 0.05 : 0.1);
     }
     
     if (typingAudioRef.current) {
-      typingAudioRef.current.volume = isMuted ? 0 : (isTyping ? 0.2 : 0);
+      typingAudioRef.current.volume = isMuted ? 0 : 0.1;
     }
     
     if (notifyAudioRef.current) {
-      notifyAudioRef.current.volume = isMuted ? 0 : 0.5;
+      notifyAudioRef.current.volume = isMuted ? 0 : 0.3;
     }
   }, [isMuted, isTyping]);
 
@@ -79,7 +79,7 @@ export function useAudio() {
       if (isMuted) {
         typingAudioRef.current.volume = 0;
       } else {
-        typingAudioRef.current.volume = isTyping ? 0.2 : 0;
+        typingAudioRef.current.volume = isTyping ? 0.1 : 0;
         
         if (isTyping) {
           typingAudioRef.current.play().catch(e => console.log("Error playing typing sound:", e));
@@ -95,7 +95,7 @@ export function useAudio() {
       if (isMuted) {
         backgroundAudioRef.current.volume = 0;
       } else {
-        backgroundAudioRef.current.volume = isTyping ? 0.1 : 0.3;
+        backgroundAudioRef.current.volume = isTyping ? 0.05 : 0.1; // Volume ainda mais baixo durante digitação
       }
     }
   }, [isTyping, isMuted]);
