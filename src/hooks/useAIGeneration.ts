@@ -1,12 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Investigation, Character } from '@/types/game';
-import { 
-  generateCase, 
-  generateCharacterImage, 
-  clearImageCache,
-  NarrativeTone,
-  GenerationProgress 
-} from '@/services/aiGeneration';
+import { generateCase, generateCharacterImage, clearImageCache, NarrativeTone, GenerationProgress } from '@/services/aiGeneration';
 
 export function useAIGeneration() {
   const [investigation, setInvestigation] = useState<Investigation | null>(null);
@@ -18,27 +12,88 @@ export function useAIGeneration() {
   const [characterImages, setCharacterImages] = useState<Map<string, string>>(new Map());
 
   const generateNewCase = useCallback(async (tone: NarrativeTone = 'noir') => {
-    setProgress({ stage: 'generating-case', message: 'Criando caso criminal...', progress: 10 });
+    setProgress({
+      stage: 'generating-case',
+      message: 'Preparando investigação...',
+      progress: 0,
+    });
+    
     clearImageCache();
     setCharacterImages(new Map());
 
     try {
       // Generate the case
-      setProgress({ stage: 'generating-case', message: 'A IA está criando seu caso...', progress: 30 });
+      setProgress({
+        stage: 'generating-case',
+        message: 'Criando crime misterioso...',
+        progress: 10,
+      });
+      
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      setProgress({
+        stage: 'generating-case',
+        message: 'Desenvolvendo enredo...',
+        progress: 20,
+      });
+      
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
       const newInvestigation = await generateCase(tone);
       
-      setProgress({ stage: 'generating-case', message: 'Caso gerado com sucesso!', progress: 100 });
+      setProgress({
+        stage: 'generating-case',
+        message: 'Criando personagens suspeitos...',
+        progress: 40,
+      });
+      
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      setProgress({
+        stage: 'generating-case',
+        message: 'Plantando pistas e evidências...',
+        progress: 60,
+      });
+      
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      setProgress({
+        stage: 'generating-case',
+        message: 'Montando cenas interativas...',
+        progress: 80,
+      });
+      
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      setProgress({
+        stage: 'generating-case',
+        message: 'Finalizando caso...',
+        progress: 90,
+      });
+      
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      setProgress({
+        stage: 'generating-case',
+        message: 'Caso gerado com sucesso!',
+        progress: 100,
+      });
+      
       setInvestigation(newInvestigation);
       
-      setProgress({ stage: 'complete', message: 'Pronto para jogar!', progress: 100 });
+      setProgress({
+        stage: 'complete',
+        message: 'Pronto para jogar!',
+        progress: 100,
+      });
       
       return newInvestigation;
     } catch (error) {
       console.error('Error generating case:', error);
-      setProgress({ 
-        stage: 'error', 
-        message: error instanceof Error ? error.message : 'Erro ao gerar caso', 
-        progress: 0 
+      setProgress({
+        stage: 'error',
+        message: error instanceof Error ? error.message : 'Erro ao gerar caso',
+        progress: 0,
       });
       throw error;
     }
@@ -49,9 +104,7 @@ export function useAIGeneration() {
       return characterImages.get(character.id);
     }
 
-    const imagePrompt = (character as any).imagePrompt || 
-      `${character.name}, ${character.role}, ${character.description}`;
-    
+    const imagePrompt = (character as any).imagePrompt || `${character.name}, ${character.role}, ${character.description}`;
     const imageUrl = await generateCharacterImage(character.id, imagePrompt);
     
     if (imageUrl) {
@@ -63,7 +116,11 @@ export function useAIGeneration() {
 
   const reset = useCallback(() => {
     setInvestigation(null);
-    setProgress({ stage: 'idle', message: '', progress: 0 });
+    setProgress({
+      stage: 'idle',
+      message: '',
+      progress: 0,
+    });
     setCharacterImages(new Map());
     clearImageCache();
   }, []);
