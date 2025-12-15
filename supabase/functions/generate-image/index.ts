@@ -5,6 +5,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Usar a variável de ambiente do projeto
 const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 
 serve(async (req) => {
@@ -14,7 +15,6 @@ serve(async (req) => {
 
   try {
     const { prompt, type = 'character' } = await req.json();
-    
     console.log('Generating image:', type, prompt);
 
     const stylePrefix = `1930s-1950s cartoon style, vectorized art, bold outlines, solid colors, noir atmosphere, Cuphead/Fleischer Studios inspired, vintage animation aesthetic. `;
@@ -52,6 +52,7 @@ serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
+      
       if (response.status === 402) {
         return new Response(JSON.stringify({ error: 'AI credits exhausted' }), {
           status: 402,
@@ -64,9 +65,8 @@ serve(async (req) => {
 
     const data = await response.json();
     console.log('Image generated successfully');
-
-    const imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
     
+    const imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
     if (!imageUrl) {
       throw new Error('No image in response');
     }
@@ -74,7 +74,6 @@ serve(async (req) => {
     return new Response(JSON.stringify({ imageUrl }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
-
   } catch (error) {
     console.error('Error generating image:', error);
     const message = error instanceof Error ? error.message : 'Unknown error';

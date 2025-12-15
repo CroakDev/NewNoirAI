@@ -6,6 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Usar a variável de ambiente do projeto
 const ELEVENLABS_API_KEY = Deno.env.get('ELEVENLABS_API_KEY');
 
 serve(async (req) => {
@@ -15,15 +16,14 @@ serve(async (req) => {
 
   try {
     const { type = 'ambient', prompt } = await req.json();
-    
     console.log('Generating SFX:', type, prompt);
 
     // If no ElevenLabs key, return a placeholder response
     if (!ELEVENLABS_API_KEY) {
       console.log('No ElevenLabs API key configured, returning placeholder');
       return new Response(JSON.stringify({ 
-        audioUrl: null,
-        message: 'Audio generation requires ElevenLabs API key'
+        audioUrl: null, 
+        message: 'Audio generation requires ElevenLabs API key' 
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -67,14 +67,10 @@ serve(async (req) => {
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
-
   } catch (error) {
     console.error('Error generating SFX:', error);
     const message = error instanceof Error ? error.message : 'Unknown error';
-    return new Response(JSON.stringify({ 
-      error: message,
-      audioUrl: null 
-    }), {
+    return new Response(JSON.stringify({ error: message, audioUrl: null }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

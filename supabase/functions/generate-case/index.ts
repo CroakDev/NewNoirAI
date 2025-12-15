@@ -5,6 +5,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Usar a variável de ambiente do projeto
 const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 
 serve(async (req) => {
@@ -14,7 +15,6 @@ serve(async (req) => {
 
   try {
     const { tone = 'noir' } = await req.json();
-    
     console.log('Generating case with tone:', tone);
 
     const toneDescriptions: Record<string, string> = {
@@ -23,10 +23,7 @@ serve(async (req) => {
       dark: 'Dark mystery with morally ambiguous endings. Characters have complex motivations.'
     };
 
-    const systemPrompt = `You are a master crime fiction writer creating an interactive investigation game. 
-Your stories have the visual style of 1930s-1950s cartoons (Cuphead, Fleischer Studios) combined with noir atmosphere.
-
-Create a complete criminal investigation with:
+    const systemPrompt = `You are a master crime fiction writer creating an interactive investigation game. Your stories have the visual style of 1930s-1950s cartoons (Cuphead, Fleischer Studios) combined with noir atmosphere. Create a complete criminal investigation with:
 - A unique crime (murder, theft, disappearance, fraud, etc.)
 - 4-6 distinct characters with personalities
 - 6-8 clues (mix of true leads and red herrings)
@@ -113,7 +110,11 @@ ALL TEXT MUST BE IN PORTUGUESE (Brazil).`;
                       location: { type: 'string' },
                       narrative: { type: 'string', description: 'The story text shown to the player (2-4 paragraphs)' },
                       mood: { type: 'string', enum: ['neutral', 'tense', 'mysterious', 'dramatic', 'dangerous'] },
-                      characters: { type: 'array', items: { type: 'string' }, description: 'Character IDs present in this scene' },
+                      characters: { 
+                        type: 'array', 
+                        items: { type: 'string' },
+                        description: 'Character IDs present in this scene'
+                      },
                       choices: {
                         type: 'array',
                         items: {
@@ -156,6 +157,7 @@ ALL TEXT MUST BE IN PORTUGUESE (Brazil).`;
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
+      
       if (response.status === 402) {
         return new Response(JSON.stringify({ error: 'AI credits exhausted. Please add more credits.' }), {
           status: 402,
@@ -168,19 +170,18 @@ ALL TEXT MUST BE IN PORTUGUESE (Brazil).`;
 
     const data = await response.json();
     console.log('AI response received');
-
+    
     const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
     if (!toolCall) {
       throw new Error('No tool call in response');
     }
-
+    
     const investigation = JSON.parse(toolCall.function.arguments);
     console.log('Investigation generated:', investigation.crime?.title);
 
     return new Response(JSON.stringify(investigation), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
-
   } catch (error) {
     console.error('Error generating case:', error);
     const message = error instanceof Error ? error.message : 'Unknown error';
