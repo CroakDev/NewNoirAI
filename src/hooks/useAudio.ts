@@ -18,12 +18,12 @@ export function useAudio() {
     audioContextRef.current = new AudioContext();
     
     // Carregar trilha sonora de fundo
-    backgroundAudioRef.current = new Audio('@/assets/');
+    backgroundAudioRef.current = new Audio('@/assets/trilhasonora.mp3');
     backgroundAudioRef.current.loop = true;
     backgroundAudioRef.current.volume = isMuted ? 0 : 0.3;
     
     // Carregar efeito sonoro de digitação
-    typingAudioRef.current = new Audio('/digitando.mp3');
+    typingAudioRef.current = new Audio('@/assets/trilhasonora.mp3');
     typingAudioRef.current.loop = true;
     typingAudioRef.current.volume = isMuted ? 0 : 0.2;
     
