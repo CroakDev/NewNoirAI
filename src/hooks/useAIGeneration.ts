@@ -12,6 +12,8 @@ export function useAIGeneration() {
   const [characterImages, setCharacterImages] = useState<Map<string, string>>(new Map());
 
   const generateNewCase = useCallback(async (tone: NarrativeTone = 'noir') => {
+    console.log('useAIGeneration: Starting case generation with tone', tone);
+    
     setProgress({
       stage: 'generating-case',
       message: 'Preparando investigação...',
@@ -39,7 +41,13 @@ export function useAIGeneration() {
       
       await new Promise(resolve => setTimeout(resolve, 800));
       
+      console.log('useAIGeneration: Calling generateCase');
       const newInvestigation = await generateCase(tone);
+      console.log('useAIGeneration: Case generated', newInvestigation);
+      
+      if (!newInvestigation) {
+        throw new Error('Failed to generate investigation - no data returned');
+      }
       
       setProgress({
         stage: 'generating-case',
@@ -82,6 +90,7 @@ export function useAIGeneration() {
       // Small delay to show completion message
       await new Promise(resolve => setTimeout(resolve, 300));
       
+      console.log('useAIGeneration: Setting investigation state');
       setInvestigation(newInvestigation);
       
       setProgress({
@@ -90,9 +99,10 @@ export function useAIGeneration() {
         progress: 100,
       });
       
+      console.log('useAIGeneration: Case generation complete');
       return newInvestigation;
     } catch (error) {
-      console.error('Error generating case:', error);
+      console.error('useAIGeneration: Error generating case:', error);
       setProgress({
         stage: 'error',
         message: error instanceof Error ? error.message : 'Erro ao gerar caso',
@@ -118,6 +128,7 @@ export function useAIGeneration() {
   }, [characterImages]);
 
   const reset = useCallback(() => {
+    console.log('useAIGeneration: Resetting state');
     setInvestigation(null);
     setProgress({
       stage: 'idle',
@@ -127,6 +138,8 @@ export function useAIGeneration() {
     setCharacterImages(new Map());
     clearImageCache();
   }, []);
+
+  console.log('useAIGeneration: Current state', { investigation, progress });
 
   return {
     investigation,

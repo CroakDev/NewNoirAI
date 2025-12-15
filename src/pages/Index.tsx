@@ -14,7 +14,9 @@ const Index = () => {
   const { investigation, progress, characterImages, generateNewCase, reset, isLoading, hasError } = useAIGeneration();
 
   useEffect(() => {
+    console.log('Index: useEffect hasError triggered', { hasError, progress });
     if (hasError) {
+      console.error("Index: Error in AI generation", progress.message);
       toast.error("Erro na Geração da IA", {
         description: progress.message || "Não foi possível gerar o caso. Tente novamente.",
       });
@@ -23,38 +25,46 @@ const Index = () => {
   }, [hasError, progress.message]);
 
   useEffect(() => {
+    console.log('Index: useEffect investigation triggered', { investigation, currentView });
     // When generation is complete and we have an investigation, transition to game view
     if (investigation && currentView === 'loading') {
+      console.log('Index: Transitioning to game view');
       setCurrentView('game');
     }
   }, [investigation, currentView]);
 
   const handleStartGame = async (tone: NarrativeTone) => {
+    console.log('Index: Starting game with tone', tone);
     setCurrentView('loading');
     try {
       await generateNewCase(tone);
     } catch (error) {
-      console.error("Failed to generate new case:", error);
+      console.error("Index: Failed to generate new case:", error);
       // Error toast is handled by useEffect
     }
   };
 
   const handleRestartGame = async () => {
+    console.log('Index: Restarting game');
     setCurrentView('loading');
     try {
       reset(); // Clear previous state
       await generateNewCase('noir'); // Default to noir for restart, or add tone selection
     } catch (error) {
-      console.error("Failed to restart game:", error);
+      console.error("Index: Failed to restart game:", error);
     }
   };
 
   const handleMainMenu = () => {
+    console.log('Index: Returning to main menu');
     reset();
     setCurrentView('start');
   };
 
+  console.log('Index: Rendering', { currentView, isLoading, investigation });
+
   if (currentView === 'loading' || isLoading) {
+    console.log('Index: Showing loading screen');
     return <LoadingScreen progress={progress} />;
   }
 
@@ -70,6 +80,20 @@ const Index = () => {
           onMainMenu={handleMainMenu} 
           onRestartGame={handleRestartGame} 
         />
+      )}
+      {currentView === 'game' && !investigation && (
+        <div className="min-h-screen bg-red-500 flex items-center justify-center">
+          <div className="text-white text-center p-8">
+            <h1 className="text-2xl font-bold mb-4">Erro: Investigação não encontrada</h1>
+            <p className="mb-4">Houve um problema ao carregar o caso. Retornando ao menu principal.</p>
+            <button 
+              onClick={handleMainMenu}
+              className="px-4 py-2 bg-white text-red-500 rounded font-bold"
+            >
+              Voltar ao Menu
+            </button>
+          </div>
+        </div>
       )}
     </>
   );
