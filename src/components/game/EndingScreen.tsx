@@ -1,5 +1,5 @@
 import { GameState } from '@/types/game';
-import { Trophy, XCircle, RotateCcw, Home, User, Coins, Clock, Volume2, VolumeX } from 'lucide-react';
+import { Trophy, XCircle, RotateCcw, Home, User, Coins, Clock, Volume2, VolumeX, SkipForward } from 'lucide-react';
 import { useAudio } from '@/hooks/useAudio';
 
 interface EndingScreenProps {
@@ -11,7 +11,7 @@ interface EndingScreenProps {
 
 export function EndingScreen({ gameState, onRestart, onMainMenu, onProfile }: EndingScreenProps) {
   const isCorrect = gameState.ending === 'correct';
-  const { isMuted, toggleMute } = useAudio();
+  const { isMuted, toggleMute, nextTrack, currentTrack } = useAudio();
   
   // Calcular tempo de jogo (se startTime estiver disponível)
   const timeTaken = gameState.startTime 
@@ -31,11 +31,19 @@ export function EndingScreen({ gameState, onRestart, onMainMenu, onProfile }: En
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-noir-deep/95 backdrop-blur-sm">
-      {/* Audio control */}
-      <div className="fixed top-4 right-4 z-50">
+      {/* Audio controls */}
+      <div className="fixed top-4 right-4 z-50 flex gap-2">
+        <button
+          onClick={nextTrack}
+          className="btn-noir p-3 rounded-full"
+          title="Próxima trilha"
+        >
+          <SkipForward className="w-5 h-5 text-noir-amber" />
+        </button>
         <button
           onClick={toggleMute}
           className="btn-noir p-3 rounded-full"
+          title={isMuted ? "Ativar som" : "Desativar som"}
         >
           {isMuted ? (
             <VolumeX className="w-5 h-5 text-noir-amber" />
@@ -43,6 +51,15 @@ export function EndingScreen({ gameState, onRestart, onMainMenu, onProfile }: En
             <Volume2 className="w-5 h-5 text-noir-amber" />
           )}
         </button>
+      </div>
+      
+      {/* Track indicator */}
+      <div className="fixed top-4 left-4 z-50">
+        <div className="bg-noir-deep/80 backdrop-blur-sm px-3 py-1 rounded-full border border-border">
+          <span className="font-typewriter text-xs text-muted-foreground">
+            Trilha {currentTrack}/5
+          </span>
+        </div>
       </div>
       
       <div className="max-w-lg mx-auto text-center p-8">

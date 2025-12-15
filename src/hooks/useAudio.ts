@@ -6,9 +6,11 @@ export function useAudio() {
     return saved ? JSON.parse(saved) : false;
   });
   
+  const [currentTrack, setCurrentTrack] = useState(1);
   const [isTyping, setIsTyping] = useState(false);
   const backgroundAudioRef = useRef<HTMLAudioElement | null>(null);
   const typingAudioRef = useRef<HTMLAudioElement | null>(null);
+  const notifyAudioRef = useRef<HTMLAudioElement | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
 
   // Inicializar áudio
@@ -18,7 +20,7 @@ export function useAudio() {
     audioContextRef.current = new AudioContext();
     
     // Carregar trilha sonora de fundo
-    backgroundAudioRef.current = new Audio('/src/assets/trilhasonora.mp3');
+    backgroundAudioRef.current = new Audio(`/src/assets/trilhasonora${currentTrack}.mp3`);
     backgroundAudioRef.current.loop = true;
     backgroundAudioRef.current.volume = isMuted ? 0 : 0.3;
     
@@ -26,6 +28,10 @@ export function useAudio() {
     typingAudioRef.current = new Audio('/src/assets/digitando.mp3');
     typingAudioRef.current.loop = true;
     typingAudioRef.current.volume = isMuted ? 0 : 0.2;
+    
+    // Carregar efeito sonoro de notificação
+    notifyAudioRef.current = new Audio('/src/assets/notify.mp3');
+    notifyAudioRef.current.volume = isMuted ? 0 : 0.5;
     
     // Iniciar trilha sonora
     const playBackgroundAudio = async () => {
@@ -43,11 +49,12 @@ export function useAudio() {
     return () => {
       backgroundAudioRef.current?.pause();
       typingAudioRef.current?.pause();
+      notifyAudioRef.current?.pause();
       if (audioContextRef.current) {
         audioContextRef.current.close();
       }
     };
-  }, []);
+  }, [currentTrack]);
 
   // Atualizar volumes quando mute muda
   useEffect(() => {
@@ -59,6 +66,10 @@ export function useAudio() {
     
     if (typingAudioRef.current) {
       typingAudioRef.current.volume = isMuted ? 0 : (isTyping ? 0.2 : 0);
+    }
+    
+    if (notifyAudioRef.current) {
+      notifyAudioRef.current.volume = isMuted ? 0 : 0.5;
     }
   }, [isMuted, isTyping]);
 
@@ -93,6 +104,17 @@ export function useAudio() {
     setIsMuted(prev => !prev);
   };
 
+  const nextTrack = () => {
+    setCurrentTrack(prev => (prev % 5) + 1);
+  };
+
+  const playNotifySound = () => {
+    if (notifyAudioRef.current && !isMuted) {
+      notifyAudioRef.current.currentTime = 0;
+      notifyAudioRef.current.play().catch(e => console.log("Error playing notify sound:", e));
+    }
+  };
+
   const startTypingSound = () => {
     setIsTyping(true);
   };
@@ -103,7 +125,10 @@ export function useAudio() {
 
   return {
     isMuted,
+    currentTrack,
     toggleMute,
+    nextTrack,
+    playNotifySound,
     startTypingSound,
     stopTypingSound
   };

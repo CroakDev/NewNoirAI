@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Play, BookOpen, Settings, Sparkles, User, Volume2, VolumeX } from 'lucide-react';
+import { Play, BookOpen, Settings, Sparkles, User, Volume2, VolumeX, SkipForward } from 'lucide-react';
 import { RainEffect } from './game/RainEffect';
 import { ToneSelector } from './game/ToneSelector';
 import { NarrativeTone } from '@/services/aiGeneration';
@@ -16,7 +16,7 @@ interface StartScreenProps {
 export function StartScreen({ onStartGame, onProfile, profile }: StartScreenProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [selectedTone, setSelectedTone] = useState<NarrativeTone>('noir');
-  const { isMuted, toggleMute } = useAudio();
+  const { isMuted, toggleMute, nextTrack, currentTrack } = useAudio();
 
   useEffect(() => {
     setTimeout(() => setIsVisible(true), 100);
@@ -36,11 +36,19 @@ export function StartScreen({ onStartGame, onProfile, profile }: StartScreenProp
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 bg-noir-amber/10 rounded-full blur-3xl pointer-events-none" />
       
       <div className="relative z-30 flex flex-col items-center justify-center min-h-screen px-4">
-        {/* Audio control */}
-        <div className="absolute top-4 right-4 z-40">
+        {/* Audio controls */}
+        <div className="absolute top-4 right-4 z-40 flex gap-2">
+          <button
+            onClick={nextTrack}
+            className="btn-noir p-3 rounded-full"
+            title="Próxima trilha"
+          >
+            <SkipForward className="w-5 h-5 text-noir-amber" />
+          </button>
           <button
             onClick={toggleMute}
             className="btn-noir p-3 rounded-full"
+            title={isMuted ? "Ativar som" : "Desativar som"}
           >
             {isMuted ? (
               <VolumeX className="w-5 h-5 text-noir-amber" />
@@ -48,6 +56,15 @@ export function StartScreen({ onStartGame, onProfile, profile }: StartScreenProp
               <Volume2 className="w-5 h-5 text-noir-amber" />
             )}
           </button>
+        </div>
+        
+        {/* Track indicator */}
+        <div className="absolute top-4 left-4 z-40">
+          <div className="bg-noir-deep/80 backdrop-blur-sm px-3 py-1 rounded-full border border-border">
+            <span className="font-typewriter text-xs text-muted-foreground">
+              Trilha {currentTrack}/5
+            </span>
+          </div>
         </div>
         
         {/* Logo/Title */}

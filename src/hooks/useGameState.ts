@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { GameState, Scene, Choice, Investigation, Clue } from '@/types/game';
 import { toast } from 'sonner';
+import { useAudio } from '@/hooks/useAudio';
 
 const initialGameState: GameState = {
   currentScene: '',
@@ -18,19 +19,19 @@ export function useGameState(investigation: Investigation) {
   const initialSceneId = useMemo(() => {
     return investigation.startingSceneId || (investigation.scenes?.[0]?.id || 'scene-intro');
   }, [investigation]);
-
+  
   const [gameState, setGameState] = useState<GameState>(() => ({
     ...initialGameState,
     currentScene: initialSceneId
   }));
-
+  
   const [narrativeHistory, setNarrativeHistory] = useState<string[]>([]);
+  const { playNotifySound } = useAudio();
 
   // Efeito para mostrar notificações de novas pistas
   useEffect(() => {
     if (gameState.discoveredClues.length > 0) {
       const lastClueId = gameState.discoveredClues[gameState.discoveredClues.length - 1];
-      
       // Verificar se a pista já existia antes (para evitar notificações duplicadas)
       const prevClueCount = gameState.discoveredClues.length - 1;
       if (prevClueCount >= 0) {
@@ -51,6 +52,7 @@ export function useGameState(investigation: Investigation) {
       console.error('useGameState: No scenes in investigation');
       return undefined;
     }
+    
     const scene = investigation.scenes.find(s => s.id === gameState.currentScene);
     console.log('useGameState: Current scene', scene);
     return scene;
@@ -87,11 +89,11 @@ export function useGameState(investigation: Investigation) {
           newState.gamePhase = 'investigation';
         }
       }
-
+      
       console.log('useGameState: New state after choice', newState);
       return newState;
     });
-
+    
     // Add to narrative history if needed
     if (choice.nextSceneId && investigation.scenes) {
       const scene = investigation.scenes.find(s => s.id === choice.nextSceneId);
@@ -111,6 +113,7 @@ export function useGameState(investigation: Investigation) {
       console.warn('useGameState: No clues in investigation');
       return [];
     }
+    
     return investigation.clues.filter(clue => 
       gameState.discoveredClues.includes(clue.id)
     );
@@ -118,10 +121,7 @@ export function useGameState(investigation: Investigation) {
 
   const resetGame = useCallback(() => {
     console.log('useGameState: Resetting game');
-    setGameState({ 
-      ...initialGameState, 
-      currentScene: initialSceneId 
-    });
+    setGameState({ ...initialGameState, currentScene: initialSceneId });
     setNarrativeHistory([]);
   }, [initialSceneId]);
 

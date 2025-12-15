@@ -23,19 +23,52 @@ interface ClueDetailModalProps {
   setLoadingImages: React.Dispatch<React.SetStateAction<Set<string>>>;
 }
 
-function ClueDetailModal({ clue, isOpen, onClose, clueImages, setClueImages, loadingImages, setLoadingImages }: ClueDetailModalProps) {
+function ClueDetailModal({ 
+  clue, 
+  isOpen, 
+  onClose, 
+  clueImages, 
+  setClueImages, 
+  loadingImages, 
+  setLoadingImages 
+}: ClueDetailModalProps) {
   const { toast } = useToast();
   
-  if (!clue) return null;
+  // Sempre renderizar os mesmos hooks na mesma ordem
+  const [imageUrl, setImageUrl] = useState<string | undefined>(undefined);
+  const [isLoading, setIsLoading] = useState(false);
+  
+  useEffect(() => {
+    if (!clue) {
+      setImageUrl(undefined);
+      setIsLoading(false);
+      return;
+    }
+    
+    const currentImageUrl = clueImages.get(clue.id);
+    if (currentImageUrl) {
+      setImageUrl(currentImageUrl);
+      setIsLoading(false);
+      return;
+    }
+    
+    setImageUrl(undefined);
+    setIsLoading(loadingImages.has(clue.id));
+  }, [clue, clueImages, loadingImages]);
 
   const loadImage = async () => {
+    if (!clue) return;
+    
     if (clueImages.has(clue.id) || loadingImages.has(clue.id)) return;
     
     setLoadingImages(prev => new Set(prev).add(clue.id));
+    setIsLoading(true);
+    
     try {
       const imageUrl = await generateClueImage(clue.id, clue.description);
       if (imageUrl) {
         setClueImages(prev => new Map(prev).set(clue.id, imageUrl));
+        setImageUrl(imageUrl);
       } else {
         toast({
           title: "Erro ao gerar imagem",
@@ -56,18 +89,11 @@ function ClueDetailModal({ clue, isOpen, onClose, clueImages, setClueImages, loa
         newSet.delete(clue.id);
         return newSet;
       });
+      setIsLoading(false);
     }
   };
 
-  const imageUrl = clueImages.get(clue.id);
-  const isLoading = loadingImages.has(clue.id);
-
-  // Carregar imagem automaticamente quando o modal abre
-  useEffect(() => {
-    if (clue && isOpen && !imageUrl && !isLoading) {
-      loadImage();
-    }
-  }, [clue, isOpen, imageUrl, isLoading]);
+  if (!clue) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>

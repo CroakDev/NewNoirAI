@@ -13,7 +13,7 @@ import { Investigation, GameState } from '@/types/game';
 import { generateSFX } from '@/services/aiGeneration';
 import { useDetectiveProfile } from '@/hooks/useDetectiveProfile';
 import { useAudio } from '@/hooks/useAudio';
-import { Volume2, VolumeX } from 'lucide-react';
+import { Volume2, VolumeX, SkipForward } from 'lucide-react';
 
 interface GameScreenProps {
   investigation: Investigation;
@@ -29,6 +29,7 @@ export function GameScreen({ investigation, characterImages, onMainMenu, onResta
   const [isClueLogOpen, setIsClueLogOpen] = useState(false);
   const [ambientAudio, setAmbientAudio] = useState<HTMLAudioElement | null>(null);
   const [gameStartTime] = useState<number>(Date.now());
+  const [prevClueCount, setPrevClueCount] = useState(0);
   
   const { 
     gameState, 
@@ -45,10 +46,18 @@ export function GameScreen({ investigation, characterImages, onMainMenu, onResta
   const progress = getProgress();
   
   const { profile, updateProfile, addCompletedCase, calculateEarnings } = useDetectiveProfile();
-  const { isMuted, toggleMute } = useAudio();
+  const { isMuted, toggleMute, nextTrack, playNotifySound } = useAudio();
   
   console.log('GameScreen: Current scene', currentScene);
   console.log('GameScreen: Game state', gameState);
+
+  // Verificar novas pistas para tocar som de notificação
+  useEffect(() => {
+    if (discoveredClues.length > prevClueCount) {
+      playNotifySound();
+      setPrevClueCount(discoveredClues.length);
+    }
+  }, [discoveredClues.length, prevClueCount, playNotifySound]);
 
   useEffect(() => {
     // Load ambient SFX
@@ -202,11 +211,19 @@ export function GameScreen({ investigation, characterImages, onMainMenu, onResta
       <div className="fixed inset-0 bg-gradient-vignette pointer-events-none z-10" />
       <div className="film-grain fixed inset-0 pointer-events-none z-10" />
       
-      {/* Audio control */}
-      <div className="fixed top-4 right-4 z-40">
+      {/* Audio controls */}
+      <div className="fixed top-4 right-4 z-40 flex gap-2">
+        <button
+          onClick={nextTrack}
+          className="btn-noir p-3 rounded-full"
+          title="Próxima trilha"
+        >
+          <SkipForward className="w-5 h-5 text-noir-amber" />
+        </button>
         <button
           onClick={toggleMute}
           className="btn-noir p-3 rounded-full"
+          title={isMuted ? "Ativar som" : "Desativar som"}
         >
           {isMuted ? (
             <VolumeX className="w-5 h-5 text-noir-amber" />
