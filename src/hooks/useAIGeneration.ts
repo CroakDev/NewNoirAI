@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Investigation, Character } from '@/types/game';
 import { generateCase, generateCharacterImage, clearImageCache, NarrativeTone, GenerationProgress } from '@/services/aiGeneration';
 
@@ -78,6 +78,9 @@ export function useAIGeneration() {
         message: 'Caso gerado com sucesso!',
         progress: 100,
       });
+      
+      // Small delay to show completion message
+      await new Promise(resolve => setTimeout(resolve, 300));
       
       setInvestigation(newInvestigation);
       

@@ -1,5 +1,4 @@
 "use client";
-
 import { useState, useEffect } from 'react';
 import { StartScreen } from '@/components/StartScreen';
 import { GameScreen } from '@/components/GameScreen';
@@ -12,15 +11,7 @@ type GameView = 'start' | 'loading' | 'game';
 
 const Index = () => {
   const [currentView, setCurrentView] = useState<GameView>('start');
-  const { 
-    investigation, 
-    progress, 
-    characterImages, 
-    generateNewCase, 
-    reset,
-    isLoading,
-    hasError
-  } = useAIGeneration();
+  const { investigation, progress, characterImages, generateNewCase, reset, isLoading, hasError } = useAIGeneration();
 
   useEffect(() => {
     if (hasError) {
@@ -31,11 +22,17 @@ const Index = () => {
     }
   }, [hasError, progress.message]);
 
+  useEffect(() => {
+    // When generation is complete and we have an investigation, transition to game view
+    if (investigation && currentView === 'loading') {
+      setCurrentView('game');
+    }
+  }, [investigation, currentView]);
+
   const handleStartGame = async (tone: NarrativeTone) => {
     setCurrentView('loading');
     try {
       await generateNewCase(tone);
-      setCurrentView('game');
     } catch (error) {
       console.error("Failed to generate new case:", error);
       // Error toast is handled by useEffect
@@ -47,7 +44,6 @@ const Index = () => {
     try {
       reset(); // Clear previous state
       await generateNewCase('noir'); // Default to noir for restart, or add tone selection
-      setCurrentView('game');
     } catch (error) {
       console.error("Failed to restart game:", error);
     }
@@ -69,10 +65,10 @@ const Index = () => {
       )}
       {currentView === 'game' && investigation && (
         <GameScreen 
-          investigation={investigation}
+          investigation={investigation} 
           characterImages={characterImages}
-          onMainMenu={handleMainMenu}
-          onRestartGame={handleRestartGame}
+          onMainMenu={handleMainMenu} 
+          onRestartGame={handleRestartGame} 
         />
       )}
     </>
