@@ -9,17 +9,15 @@ interface EndingScreenProps {
 
 export function EndingScreen({ gameState, onRestart, onMainMenu }: EndingScreenProps) {
   const isCorrect = gameState.ending === 'correct';
-
+  
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-noir-deep/95 backdrop-blur-sm">
       <div className="max-w-lg mx-auto text-center p-8">
-        <div className={`
-          w-24 h-24 mx-auto mb-6 rounded-full flex items-center justify-center
-          ${isCorrect 
+        <div className={`w-24 h-24 mx-auto mb-6 rounded-full flex items-center justify-center ${
+          isCorrect 
             ? 'bg-primary/20 text-primary animate-pulse-glow' 
             : 'bg-destructive/20 text-destructive'
-          }
-        `}>
+        }`}>
           {isCorrect ? (
             <Trophy className="w-12 h-12" />
           ) : (
@@ -38,8 +36,7 @@ export function EndingScreen({ gameState, onRestart, onMainMenu }: EndingScreenP
         <p className="font-body text-lg text-muted-foreground mb-8">
           {isCorrect 
             ? 'Parabéns, detetive! Sua investigação meticulosa levou à captura do verdadeiro culpado. Justiça foi feita.'
-            : 'Infelizmente, as evidências não eram suficientes ou a conclusão estava errada. O verdadeiro culpado escapou.'
-          }
+            : 'Infelizmente, as evidências não eram suficientes ou a conclusão estava errada. O verdadeiro culpado escapou.'}
         </p>
         
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -50,7 +47,6 @@ export function EndingScreen({ gameState, onRestart, onMainMenu }: EndingScreenP
             <RotateCcw className="w-5 h-5" />
             Jogar Novamente
           </button>
-          
           <button
             onClick={onMainMenu}
             className="btn-noir px-6 py-3 rounded-lg font-display flex items-center justify-center gap-2"

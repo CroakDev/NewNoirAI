@@ -78,7 +78,10 @@ export async function generateCharacterImage(characterId: string, imagePrompt: s
         'apikey': SUPABASE_KEY,
         'Authorization': `Bearer ${SUPABASE_KEY}`,
       },
-      body: JSON.stringify({ prompt: imagePrompt, type: 'character' }),
+      body: JSON.stringify({ 
+        prompt: imagePrompt,
+        type: 'character'
+      }),
     });
 
     if (!response.ok) {
@@ -87,12 +90,10 @@ export async function generateCharacterImage(characterId: string, imagePrompt: s
     }
 
     const data = await response.json();
-    
     if (data.imageUrl) {
       imageCache.set(characterId, data.imageUrl);
       return data.imageUrl;
     }
-    
     return null;
   } catch (error) {
     console.error('aiGeneration: Error generating image:', error);
@@ -100,8 +101,50 @@ export async function generateCharacterImage(characterId: string, imagePrompt: s
   }
 }
 
+export async function generateClueImage(clueId: string, description: string): Promise<string | null> {
+  const cacheKey = `clue-${clueId}`;
+  
+  // Check cache first
+  if (imageCache.has(cacheKey)) {
+    return imageCache.get(cacheKey)!;
+  }
+
+  console.log('aiGeneration: Generating image for clue:', clueId);
+  
+  try {
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/generate-image`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+      },
+      body: JSON.stringify({ 
+        prompt: `Detective noir clue: ${description}, evidence, mysterious, dramatic lighting`,
+        type: 'clue'
+      }),
+    });
+
+    if (!response.ok) {
+      console.error('aiGeneration: Clue image generation failed', response.status);
+      return null;
+    }
+
+    const data = await response.json();
+    if (data.imageUrl) {
+      imageCache.set(cacheKey, data.imageUrl);
+      return data.imageUrl;
+    }
+    return null;
+  } catch (error) {
+    console.error('aiGeneration: Error generating clue image:', error);
+    return null;
+  }
+}
+
 export async function generateSceneImage(sceneId: string, location: string): Promise<string | null> {
   const cacheKey = `scene-${sceneId}`;
+  
   if (imageCache.has(cacheKey)) {
     return imageCache.get(cacheKey)!;
   }
@@ -116,7 +159,7 @@ export async function generateSceneImage(sceneId: string, location: string): Pro
         'apikey': SUPABASE_KEY,
         'Authorization': `Bearer ${SUPABASE_KEY}`,
       },
-      body: JSON.stringify({
+      body: JSON.stringify({ 
         prompt: `Noir detective scene at ${location}, dark atmosphere, rain, neon lights`,
         type: 'scene'
       }),
@@ -127,12 +170,10 @@ export async function generateSceneImage(sceneId: string, location: string): Pro
     }
 
     const data = await response.json();
-    
     if (data.imageUrl) {
       imageCache.set(cacheKey, data.imageUrl);
       return data.imageUrl;
     }
-    
     return null;
   } catch (error) {
     console.error('aiGeneration: Error generating scene image:', error);

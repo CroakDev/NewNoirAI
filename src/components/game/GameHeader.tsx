@@ -10,23 +10,25 @@ interface GameHeaderProps {
 export function GameHeader({ crime, gameState, progress }: GameHeaderProps) {
   const getPhaseLabel = () => {
     switch (gameState.gamePhase) {
-      case 'intro':
-        return 'Introdução';
-      case 'investigation':
-        return 'Investigação';
-      case 'accusation':
-        return 'Acusação';
-      case 'ending':
-        return gameState.ending === 'correct' ? 'Caso Resolvido' : 'Caso Falhou';
-      default:
-        return 'Em andamento';
+      case 'intro': return 'Introdução';
+      case 'investigation': return 'Investigação';
+      case 'accusation': return 'Acusação';
+      case 'ending': 
+        return gameState.ending === 'correct' 
+          ? 'Caso Resolvido' 
+          : gameState.ending === 'incorrect'
+          ? 'Caso Falhou'
+          : 'Investigação Finalizada';
+      default: return 'Em andamento';
     }
   };
 
   const getPhaseColor = () => {
     switch (gameState.gamePhase) {
       case 'ending':
-        return gameState.ending === 'correct' ? 'text-green-400' : 'text-destructive';
+        return gameState.ending === 'correct' 
+          ? 'text-green-400' 
+          : 'text-destructive';
       default:
         return 'text-noir-amber';
     }
@@ -76,7 +78,7 @@ export function GameHeader({ crime, gameState, progress }: GameHeaderProps) {
         </div>
         <div className="h-1 bg-noir-shadow rounded-full overflow-hidden">
           <div 
-            className="h-full bg-gradient-amber transition-all duration-500"
+            className="h-full bg-gradient-amber transition-all duration-500" 
             style={{ width: `${progress}%` }}
           />
         </div>

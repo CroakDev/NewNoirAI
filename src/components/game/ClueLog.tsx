@@ -1,5 +1,10 @@
+import { useState } from 'react';
 import { Clue } from '@/types/game';
-import { Search, MapPin, AlertCircle, CheckCircle } from 'lucide-react';
+import { Search, MapPin, AlertCircle, CheckCircle, Eye } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { generateClueImage } from '@/services/aiGeneration';
 
 interface ClueLogProps {
   clues: Clue[];
@@ -7,75 +12,198 @@ interface ClueLogProps {
   onToggle: () => void;
 }
 
-export function ClueLog({ clues, isOpen, onToggle }: ClueLogProps) {
+interface ClueDetailModalProps {
+  clue: Clue | null;
+  isOpen: boolean;
+  onClose: () => void;
+  clueImages: Map<string, string>;
+  setClueImages: React.Dispatch<React.SetStateAction<Map<string, string>>>;
+}
+
+function ClueDetailModal({ clue, isOpen, onClose, clueImages, setClueImages }: ClueDetailModalProps) {
+  const [isLoadingImage, setIsLoadingImage] = useState(false);
+  
+  if (!clue) return null;
+
+  const loadImage = async () => {
+    if (clueImages.has(clue.id)) return;
+    
+    setIsLoadingImage(true);
+    try {
+      const imageUrl = await generateClueImage(clue.id, clue.description);
+      if (imageUrl) {
+        setClueImages(prev => new Map(prev).set(clue.id, imageUrl));
+      }
+    } catch (error) {
+      console.error('Error loading clue image:', error);
+    } finally {
+      setIsLoadingImage(false);
+    }
+  };
+
+  const imageUrl = clueImages.get(clue.id);
+
   return (
-    <div className={`
-      fixed right-0 top-0 h-full w-80 bg-noir-deep/95 backdrop-blur-sm
-      border-l border-border transition-transform duration-500 z-40
-      ${isOpen ? 'translate-x-0' : 'translate-x-full'}
-    `}>
-      <div className="p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="font-display text-xl text-primary flex items-center gap-2">
-            <Search className="w-5 h-5" />
-            Pistas Coletadas
-          </h2>
-          <button 
-            onClick={onToggle}
-            className="text-muted-foreground hover:text-foreground transition-colors"
-          >
-            ✕
-          </button>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-md bg-card border-border">
+        <DialogHeader>
+          <DialogTitle className="font-display text-xl flex items-center gap-2">
+            {clue.isReal ? (
+              <CheckCircle className="w-5 h-5 text-primary" />
+            ) : (
+              <AlertCircle className="w-5 h-5 text-destructive" />
+            )}
+            {clue.name}
+          </DialogTitle>
+        </DialogHeader>
+        
+        <div className="space-y-4">
+          <Card className="overflow-hidden">
+            <CardContent className="p-0">
+              {imageUrl ? (
+                <img 
+                  src={imageUrl} 
+                  alt={clue.name} 
+                  className="w-full h-48 object-cover"
+                />
+              ) : (
+                <div className="w-full h-48 bg-muted flex items-center justify-center">
+                  {isLoadingImage ? (
+                    <div className="animate-pulse">Carregando imagem...</div>
+                  ) : (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={loadImage}
+                      disabled={isLoadingImage}
+                    >
+                      {isLoadingImage ? 'Gerando...' : 'Gerar Imagem'}
+                    </Button>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+          
+          <div className="space-y-3">
+            <div>
+              <h3 className="font-display text-sm text-muted-foreground mb-1">Descrição</h3>
+              <p className="font-body text-foreground text-sm">{clue.description}</p>
+            </div>
+            
+            <div className="flex items-center gap-2 text-xs">
+              <MapPin className="w-4 h-4 text-noir-amber" />
+              <span className="font-body">{clue.location}</span>
+            </div>
+            
+            <div className="flex items-center gap-2 text-xs">
+              <span className={`px-2 py-1 rounded-full ${
+                clue.isReal ? 'bg-primary/20 text-primary' : 'bg-destructive/20 text-destructive'
+              }`}>
+                {clue.isReal ? 'Pista Real' : 'Red Herring'}
+              </span>
+              <span className={`px-2 py-1 rounded-full ${
+                clue.importance === 'critical' ? 'bg-destructive/20 text-destructive' :
+                clue.importance === 'important' ? 'bg-warning/20 text-warning' :
+                'bg-muted/20 text-muted-foreground'
+              }`}>
+                {clue.importance === 'critical' ? 'Crítica' : 
+                 clue.importance === 'important' ? 'Importante' : 'Menor'}
+              </span>
+            </div>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+export function ClueLog({ clues, isOpen, onToggle }: ClueLogProps) {
+  const [selectedClue, setSelectedClue] = useState<Clue | null>(null);
+  const [clueImages, setClueImages] = useState<Map<string, string>>(new Map());
+  
+  const handleClueClick = (clue: Clue) => {
+    setSelectedClue(clue);
+  };
+
+  const closeDetailModal = () => {
+    setSelectedClue(null);
+  };
+
+  return (
+    <>
+      <div className={`fixed right-0 top-0 h-full w-80 bg-noir-deep/95 backdrop-blur-sm border-l border-border transition-transform duration-500 z-40 ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="font-display text-xl text-primary flex items-center gap-2">
+              <Search className="w-5 h-5" />
+              Pistas Coletadas
+            </h2>
+            <button 
+              onClick={onToggle} 
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
+              ✕
+            </button>
+          </div>
+          
+          {clues.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <AlertCircle className="w-12 h-12 mx-auto mb-4 opacity-50" />
+              <p className="font-body">Nenhuma pista encontrada ainda.</p>
+              <p className="text-sm mt-2">Investigue a cena do crime para encontrar evidências.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {clues.map((clue, index) => (
+                <button
+                  key={clue.id}
+                  onClick={() => handleClueClick(clue)}
+                  className="w-full noir-card p-4 rounded-lg fade-in text-left hover:border-noir-amber/50 transition-colors"
+                  style={{ animationDelay: `${index * 0.1}s` }}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                      clue.isReal ? 'bg-primary/20 text-primary' : 'bg-destructive/20 text-destructive'
+                    }`}>
+                      {clue.isReal ? (
+                        <CheckCircle className="w-4 h-4" />
+                      ) : (
+                        <AlertCircle className="w-4 h-4" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-display text-sm text-foreground truncate">
+                        {clue.name}
+                      </h3>
+                      <p className="text-xs text-muted-foreground font-body mt-1 line-clamp-2">
+                        {clue.description}
+                      </p>
+                      <div className="flex items-center gap-1 mt-2 text-xs text-noir-amber">
+                        <MapPin className="w-3 h-3" />
+                        <span>{clue.location}</span>
+                      </div>
+                    </div>
+                    <Eye className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
         
-        {clues.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground">
-            <AlertCircle className="w-12 h-12 mx-auto mb-4 opacity-50" />
-            <p className="font-body">Nenhuma pista encontrada ainda.</p>
-            <p className="text-sm mt-2">Investigue a cena do crime para encontrar evidências.</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {clues.map((clue, index) => (
-              <div
-                key={clue.id}
-                className="noir-card p-4 rounded-lg fade-in"
-                style={{ animationDelay: `${index * 0.1}s` }}
-              >
-                <div className="flex items-start gap-3">
-                  <div className={`
-                    w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0
-                    ${clue.isReal ? 'bg-primary/20 text-primary' : 'bg-destructive/20 text-destructive'}
-                  `}>
-                    {clue.isReal ? (
-                      <CheckCircle className="w-4 h-4" />
-                    ) : (
-                      <AlertCircle className="w-4 h-4" />
-                    )}
-                  </div>
-                  
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-display text-sm text-foreground truncate">
-                      {clue.name}
-                    </h3>
-                    <p className="text-xs text-muted-foreground font-body mt-1 line-clamp-2">
-                      {clue.description}
-                    </p>
-                    <div className="flex items-center gap-1 mt-2 text-xs text-noir-amber">
-                      <MapPin className="w-3 h-3" />
-                      <span>{clue.location}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+        {/* Decorative element */}
+        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-noir-deep to-transparent pointer-events-none" />
       </div>
       
-      {/* Decorative element */}
-      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-noir-deep to-transparent pointer-events-none" />
-    </div>
+      <ClueDetailModal 
+        clue={selectedClue} 
+        isOpen={!!selectedClue} 
+        onClose={closeDetailModal}
+        clueImages={clueImages}
+        setClueImages={setClueImages}
+      />
+    </>
   );
 }
 
